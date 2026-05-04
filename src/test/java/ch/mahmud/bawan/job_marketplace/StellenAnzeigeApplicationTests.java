@@ -1,4 +1,4 @@
-package com.example.stellen_anzeige;
+package ch.mahmud.bawan.job_marketplace;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
