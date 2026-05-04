@@ -1,4 +1,4 @@
-package ch.mahmud.bawan.job_marketplace.enumerations;
+package ch.mahmud.bawan.job_marketplace.models;
 
 public enum Status {
     PENDING,

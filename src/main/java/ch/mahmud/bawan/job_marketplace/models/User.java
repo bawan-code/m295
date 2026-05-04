@@ -1,6 +1,5 @@
-package ch.mahmud.bawan.job_marketplace.entities;
+package ch.mahmud.bawan.job_marketplace.models;
 
-import ch.mahmud.bawan.job_marketplace.enumerations.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 
