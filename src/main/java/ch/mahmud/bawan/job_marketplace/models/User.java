@@ -1,14 +1,18 @@
 package ch.mahmud.bawan.job_marketplace.models;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "users")
 public class User {
 
@@ -16,12 +20,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer userId;
 
+    @Column(nullable = false, unique = true)
+    private String keycloakId;
+
     private String name;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
-
-    private String password;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -37,8 +42,6 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<SavedJob> savedJobs = new ArrayList<>();
 
-    public User() {
-    }
 
     @PrePersist
     protected void onCreate() {
