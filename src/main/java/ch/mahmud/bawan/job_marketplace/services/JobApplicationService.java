@@ -1,7 +1,11 @@
 package ch.mahmud.bawan.job_marketplace.services;
 
+import ch.mahmud.bawan.job_marketplace.dtos.JobApplicationCreateRequestDto;
+import ch.mahmud.bawan.job_marketplace.dtos.JobApplicationResponseDto;
+import ch.mahmud.bawan.job_marketplace.dtos.JobApplicationStatusUpdateRequestDto;
 import ch.mahmud.bawan.job_marketplace.models.JobApplication;
 import ch.mahmud.bawan.job_marketplace.models.JobPosting;
+import ch.mahmud.bawan.job_marketplace.models.Role;
 import ch.mahmud.bawan.job_marketplace.models.Status;
 import ch.mahmud.bawan.job_marketplace.models.User;
 import ch.mahmud.bawan.job_marketplace.repositories.JobApplicationRepository;
@@ -29,46 +33,120 @@ public class JobApplicationService {
         this.jobPostingRepository = jobPostingRepository;
     }
 
-    public List<JobApplication> getAllApplications() {
-        return jobApplicationRepository.findAll();
-    }
+    public Optional<JobApplicationResponseDto> createJobApplication(JobApplicationCreateRequestDto request) {
+        Optional<User> jobSeekerOptional = userRepository.findById(request.getJobSeekerId());
+        Optional<JobPosting> jobPostingOptional = jobPostingRepository.findById(request.getJobId());
 
-    public Optional<JobApplication> getApplicationById(Integer id) {
-        return jobApplicationRepository.findById(id);
-    }
-
-    public Optional<JobApplication> createApplication(Integer jobSeekerId, Integer jobId) {
-        Optional<User> jobSeeker = userRepository.findById(jobSeekerId);
-        Optional<JobPosting> jobPosting = jobPostingRepository.findById(jobId);
-
-        if (jobSeeker.isEmpty() || jobPosting.isEmpty()) {
+        if (jobSeekerOptional.isEmpty() || jobPostingOptional.isEmpty()) {
             return Optional.empty();
         }
 
+        User jobSeeker = jobSeekerOptional.get();
+
+        if (jobSeeker.getRole() != Role.JOB_SEEKER) {
+            return Optional.empty();
+        }
+
+        JobPosting jobPosting = jobPostingOptional.get();
+
         JobApplication jobApplication = new JobApplication();
-        jobApplication.setJobSeeker(jobSeeker.get());
-        jobApplication.setJobPosting(jobPosting.get());
+        jobApplication.setJobSeeker(jobSeeker);
+        jobApplication.setJobPosting(jobPosting);
         jobApplication.setStatus(Status.PENDING);
 
-        JobApplication savedJobApplication = jobApplicationRepository.save(jobApplication);
+        JobApplication savedApplication = jobApplicationRepository.save(jobApplication);
 
-        return Optional.of(savedJobApplication);
+        return Optional.of(mapToJobApplicationResponseDto(savedApplication));
     }
 
-    public Optional<JobApplication> updateApplicationStatus(Integer id, Status status) {
-        return jobApplicationRepository.findById(id).map(existingJobApplication -> {
-            existingJobApplication.setStatus(status);
-
-            return jobApplicationRepository.save(existingJobApplication);
-        });
+    public List<JobApplicationResponseDto> getAllJobApplications() {
+        return jobApplicationRepository.findAll()
+                .stream()
+                .map(this::mapToJobApplicationResponseDto)
+                .toList();
     }
 
-    public boolean deleteApplication(Integer id) {
-        if (!jobApplicationRepository.existsById(id)) {
+    public Optional<JobApplicationResponseDto> getJobApplicationById(Integer applicationId) {
+        return jobApplicationRepository.findById(applicationId)
+                .map(this::mapToJobApplicationResponseDto);
+    }
+
+    public Optional<JobApplicationResponseDto> updateJobApplicationStatus(
+            Integer applicationId,
+            JobApplicationStatusUpdateRequestDto request
+    ) {
+        return jobApplicationRepository.findById(applicationId)
+                .map(existingApplication -> {
+                    existingApplication.setStatus(request.getStatus());
+
+                    JobApplication savedApplication = jobApplicationRepository.save(existingApplication);
+
+                    return mapToJobApplicationResponseDto(savedApplication);
+                });
+    }
+
+    public boolean deleteJobApplication(Integer applicationId) {
+        if (!jobApplicationRepository.existsById(applicationId)) {
             return false;
         }
 
-        jobApplicationRepository.deleteById(id);
+        jobApplicationRepository.deleteById(applicationId);
         return true;
+    }
+
+    public Optional<List<JobApplicationResponseDto>> getJobApplicationsByUserId(Integer userId) {
+        if (!userRepository.existsById(userId)) {
+            return Optional.empty();
+        }
+
+        List<JobApplicationResponseDto> applications = jobApplicationRepository.findByJobSeeker_UserId(userId)
+                .stream()
+                .map(this::mapToJobApplicationResponseDto)
+                .toList();
+
+        return Optional.of(applications);
+    }
+
+    public Optional<List<JobApplicationResponseDto>> getJobApplicationsByJobId(Integer jobId) {
+        if (!jobPostingRepository.existsById(jobId)) {
+            return Optional.empty();
+        }
+
+        List<JobApplicationResponseDto> applications = jobApplicationRepository.findByJobPosting_JobId(jobId)
+                .stream()
+                .map(this::mapToJobApplicationResponseDto)
+                .toList();
+
+        return Optional.of(applications);
+    }
+
+    private JobApplicationResponseDto mapToJobApplicationResponseDto(JobApplication jobApplication) {
+        JobApplicationResponseDto dto = new JobApplicationResponseDto();
+
+        dto.setApplicationId(jobApplication.getApplicationId());
+        dto.setStatus(jobApplication.getStatus());
+        dto.setAppliedAt(jobApplication.getAppliedAt());
+
+        if (jobApplication.getJobPosting() != null) {
+            JobPosting jobPosting = jobApplication.getJobPosting();
+
+            dto.setJobId(jobPosting.getJobId());
+            dto.setJobTitle(jobPosting.getTitle());
+
+            if (jobPosting.getEmployer() != null) {
+                dto.setEmployerId(jobPosting.getEmployer().getUserId());
+                dto.setEmployerName(jobPosting.getEmployer().getName());
+            }
+        }
+
+        if (jobApplication.getJobSeeker() != null) {
+            User jobSeeker = jobApplication.getJobSeeker();
+
+            dto.setJobSeekerId(jobSeeker.getUserId());
+            dto.setJobSeekerName(jobSeeker.getName());
+            dto.setJobSeekerEmail(jobSeeker.getEmail());
+        }
+
+        return dto;
     }
 }
