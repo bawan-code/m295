@@ -19,10 +19,11 @@ public class SecurityConfig {
 
     private static final String[] AUTH_WHITELIST = {
             "/",
-            "/v3/api-docs/**",
-            "/swagger-ui/**",
             "/swagger-ui.html",
-            "/v3/api-docs.yaml",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/v3/api-docs.yaml"
     };
 
     public SecurityConfig(JwtAuthConverter jwtAuthConverter) {
@@ -40,17 +41,46 @@ public class SecurityConfig {
                         // Swagger / OpenAPI
                         .requestMatchers(AUTH_WHITELIST).permitAll()
 
-                        // Auth endpoints
+                        // Auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 
-                        // Public Job endpoints
-                        //.requestMatchers(HttpMethod.GET, "/api/job-postings").permitAll()
-                        //.requestMatchers(HttpMethod.GET, "/api/job-postings/**").permitAll()
+                        // Public job browsing
+                        .requestMatchers(HttpMethod.GET, "/api/job-postings").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/job-postings/**").permitAll()
 
-                        //.requestMatchers(HttpMethod.GET, "/api/users").hasAnyRole("EMPLOYER", "ADMIN")
-                        // Everything else requires a valid Keycloak token
-                        .anyRequest().permitAll()
+                        // Admin
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/job-applications").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/saved-jobs").hasRole("ADMIN")
+
+                        // User profile access
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasAnyRole("ADMIN", "EMPLOYER", "JOB_SEEKER")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyRole("ADMIN", "JOB_SEEKER", "EMPLOYER")
+
+                        // Job postings
+                        .requestMatchers(HttpMethod.POST, "/api/job-postings").hasAnyRole("EMPLOYER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/job-postings/**").hasAnyRole("EMPLOYER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/job-postings/**").hasAnyRole("EMPLOYER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/job-postings").hasAnyRole("EMPLOYER", "ADMIN")
+
+                        // Job applications
+                        .requestMatchers(HttpMethod.POST, "/api/job-applications").hasRole("JOB_SEEKER")
+                        .requestMatchers(HttpMethod.GET, "/api/job-applications/*").hasAnyRole("ADMIN", "EMPLOYER", "JOB_SEEKER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/job-applications/*/status").hasAnyRole("EMPLOYER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/job-applications/*").hasAnyRole("JOB_SEEKER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/job-applications").hasAnyRole("JOB_SEEKER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/job-postings/*/job-applications").hasAnyRole("EMPLOYER", "ADMIN")
+
+                        // Saved jobs
+                        .requestMatchers(HttpMethod.POST, "/api/saved-jobs").hasRole("JOB_SEEKER")
+                        .requestMatchers(HttpMethod.GET, "/api/saved-jobs/*").hasAnyRole("JOB_SEEKER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/saved-jobs/*").hasAnyRole("JOB_SEEKER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/saved-jobs").hasAnyRole("JOB_SEEKER", "ADMIN")
+
+                        // Fallback
+                        .anyRequest().authenticated()
                 )
 
                 .oauth2ResourceServer(oauth2 -> oauth2

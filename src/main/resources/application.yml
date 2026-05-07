@@ -24,3 +24,6 @@ keycloak:
   login-client-secret: 813HgakjUgvoe2buWYuznFIsEP7WlxMC
 app:
   name: jobmarketplace
+logging:
+  level:
+    org.springframework.security: DEBUG
