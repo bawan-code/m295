@@ -1,7 +1,9 @@
 package ch.mahmud.bawan.job_marketplace.controllers;
 
+import ch.mahmud.bawan.job_marketplace.dtos.JobPostingResponseDto;
 import ch.mahmud.bawan.job_marketplace.dtos.UserResponseDto;
 import ch.mahmud.bawan.job_marketplace.dtos.UserUpdateRequestDto;
+import ch.mahmud.bawan.job_marketplace.services.JobPostingService;
 import ch.mahmud.bawan.job_marketplace.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,9 +24,11 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final JobPostingService jobPostingService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JobPostingService jobPostingService) {
         this.userService = userService;
+        this.jobPostingService = jobPostingService;
     }
 
     @Operation(summary = "Get all users", description = "Returns a list of all users")
@@ -79,5 +83,17 @@ public class UserController {
         }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @Operation(summary = "Get job postings by user", description = "Returns all job postings created by a specific employer")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Job postings successfully returned"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @GetMapping("/{userId}/job-postings")
+    public ResponseEntity<List<JobPostingResponseDto>> getJobPostingsByUserId(@PathVariable Integer userId) {
+        return jobPostingService.getJobPostingsByUserId(userId)
+                .map(jobPostings -> new ResponseEntity<>(jobPostings, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }
