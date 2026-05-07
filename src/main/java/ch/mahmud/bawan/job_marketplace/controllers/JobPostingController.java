@@ -96,16 +96,4 @@ public class JobPostingController {
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
-    @Operation(summary = "Get job postings by employer", description = "Returns all job postings created by a specific user/employer")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Job postings successfully returned"),
-            @ApiResponse(responseCode = "404", description = "User not found")
-    })
-    @GetMapping("/users/{userId}")
-    public ResponseEntity<List<JobPostingResponseDto>> getByUserId(@PathVariable Integer userId) {
-        return jobPostingService.getJobPostingsByUserId(userId)
-                .map(jobPostings -> new ResponseEntity<>(jobPostings, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
 }

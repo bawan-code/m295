@@ -1,6 +1,9 @@
 package ch.mahmud.bawan.job_marketplace.services;
 
+import ch.mahmud.bawan.job_marketplace.dtos.SavedJobCreateRequestDto;
+import ch.mahmud.bawan.job_marketplace.dtos.SavedJobResponseDto;
 import ch.mahmud.bawan.job_marketplace.models.JobPosting;
+import ch.mahmud.bawan.job_marketplace.models.Role;
 import ch.mahmud.bawan.job_marketplace.models.SavedJob;
 import ch.mahmud.bawan.job_marketplace.models.User;
 import ch.mahmud.bawan.job_marketplace.repositories.JobPostingRepository;
@@ -28,37 +31,93 @@ public class SavedJobService {
         this.jobPostingRepository = jobPostingRepository;
     }
 
-    public List<SavedJob> getAllSavedJobs() {
-        return savedJobRepository.findAll();
-    }
+    public Optional<SavedJobResponseDto> createSavedJob(SavedJobCreateRequestDto request) {
+        Optional<User> userOptional = userRepository.findById(request.getUserId());
+        Optional<JobPosting> jobPostingOptional = jobPostingRepository.findById(request.getJobId());
 
-    public Optional<SavedJob> getSavedJobById(Integer id) {
-        return savedJobRepository.findById(id);
-    }
-
-    public Optional<SavedJob> saveJob(Integer userId, Integer jobId) {
-        Optional<User> user = userRepository.findById(userId);
-        Optional<JobPosting> jobPosting = jobPostingRepository.findById(jobId);
-
-        if (user.isEmpty() || jobPosting.isEmpty()) {
+        if (userOptional.isEmpty() || jobPostingOptional.isEmpty()) {
             return Optional.empty();
         }
 
+        User user = userOptional.get();
+
+        if (user.getRole() != Role.JOB_SEEKER) {
+            return Optional.empty();
+        }
+
+        JobPosting jobPosting = jobPostingOptional.get();
+
         SavedJob savedJob = new SavedJob();
-        savedJob.setUser(user.get());
-        savedJob.setJobPosting(jobPosting.get());
+        savedJob.setUser(user);
+        savedJob.setJobPosting(jobPosting);
 
         SavedJob savedResult = savedJobRepository.save(savedJob);
 
-        return Optional.of(savedResult);
+        return Optional.of(mapToSavedJobResponseDto(savedResult));
     }
 
-    public boolean deleteSavedJob(Integer id) {
-        if (!savedJobRepository.existsById(id)) {
+    public List<SavedJobResponseDto> getAllSavedJobs() {
+        return savedJobRepository.findAll()
+                .stream()
+                .map(this::mapToSavedJobResponseDto)
+                .toList();
+    }
+
+    public Optional<SavedJobResponseDto> getSavedJobById(Integer savedJobId) {
+        return savedJobRepository.findById(savedJobId)
+                .map(this::mapToSavedJobResponseDto);
+    }
+
+    public boolean deleteSavedJob(Integer savedJobId) {
+        if (!savedJobRepository.existsById(savedJobId)) {
             return false;
         }
 
-        savedJobRepository.deleteById(id);
+        savedJobRepository.deleteById(savedJobId);
         return true;
+    }
+
+    public Optional<List<SavedJobResponseDto>> getSavedJobsByUserId(Integer userId) {
+        if (!userRepository.existsById(userId)) {
+            return Optional.empty();
+        }
+
+        List<SavedJobResponseDto> savedJobs = savedJobRepository.findByUser_UserId(userId)
+                .stream()
+                .map(this::mapToSavedJobResponseDto)
+                .toList();
+
+        return Optional.of(savedJobs);
+    }
+
+    private SavedJobResponseDto mapToSavedJobResponseDto(SavedJob savedJob) {
+        SavedJobResponseDto dto = new SavedJobResponseDto();
+
+        dto.setSavedJobId(savedJob.getSavedJobId());
+        dto.setSavedAt(savedJob.getSavedAt());
+
+        if (savedJob.getUser() != null) {
+            User user = savedJob.getUser();
+
+            dto.setUserId(user.getUserId());
+            dto.setUserName(user.getName());
+            dto.setUserEmail(user.getEmail());
+        }
+
+        if (savedJob.getJobPosting() != null) {
+            JobPosting jobPosting = savedJob.getJobPosting();
+
+            dto.setJobId(jobPosting.getJobId());
+            dto.setJobTitle(jobPosting.getTitle());
+            dto.setJobLocation(jobPosting.getLocation());
+            dto.setSalaryRange(jobPosting.getSalaryRange());
+
+            if (jobPosting.getEmployer() != null) {
+                dto.setEmployerId(jobPosting.getEmployer().getUserId());
+                dto.setEmployerName(jobPosting.getEmployer().getName());
+            }
+        }
+
+        return dto;
     }
 }
