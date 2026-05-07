@@ -23,7 +23,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String keycloakId;
 
-    private String fName;
+    private String name;
 
     @Column(nullable = false, unique = true)
     private String email;

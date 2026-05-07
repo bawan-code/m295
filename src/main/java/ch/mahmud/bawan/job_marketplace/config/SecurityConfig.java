@@ -32,11 +32,15 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Public job endpoints
+                        // Auth endpoints
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+
+                        // Public Job endpoints
                         //.requestMatchers(HttpMethod.GET, "/api/job-postings").permitAll()
                         //.requestMatchers(HttpMethod.GET, "/api/job-postings/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasAnyRole("EMPLOYER", "ADMIN")
                         // Everything else requires a valid Keycloak token
                         .anyRequest().authenticated()
                 )

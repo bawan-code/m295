@@ -20,5 +20,7 @@ keycloak:
   realm: job-marketplace
   admin-client-id: job-marketplace-admin
   admin-client-secret: rWkZo26lRx56qKcLX1zRXmQYIZVgoew4
+  login-client-id: job-marketplace-api
+  login-client-secret: 813HgakjUgvoe2buWYuznFIsEP7WlxMC
 app:
   name: jobmarketplace

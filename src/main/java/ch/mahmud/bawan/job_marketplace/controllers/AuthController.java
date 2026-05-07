@@ -1,5 +1,7 @@
 package ch.mahmud.bawan.job_marketplace.controllers;
 
+import ch.mahmud.bawan.job_marketplace.dtos.LoginResponseDto;
+import ch.mahmud.bawan.job_marketplace.dtos.UserLoginRequestDto;
 import ch.mahmud.bawan.job_marketplace.dtos.UserRegisterRequestDto;
 import ch.mahmud.bawan.job_marketplace.dtos.UserResponseDto;
 import ch.mahmud.bawan.job_marketplace.services.AuthService;
@@ -24,5 +26,12 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdUser);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(@RequestBody UserLoginRequestDto request) {
+        LoginResponseDto tokenResponse = authService.login(request);
+
+        return ResponseEntity.ok(tokenResponse);
     }
 }
