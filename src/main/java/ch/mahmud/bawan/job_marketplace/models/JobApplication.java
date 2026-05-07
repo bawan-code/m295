@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @Table(name = "applications")
-public class Application {
+public class JobApplication {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +27,7 @@ public class Application {
     @JoinColumn(name = "job_seeker_id", nullable = false)
     private User jobSeeker;
 
-    public Application() {
+    public JobApplication() {
     }
 
     @PrePersist

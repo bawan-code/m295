@@ -32,7 +32,7 @@ public class User {
     private List<JobPosting> jobPostings = new ArrayList<>();
 
     @OneToMany(mappedBy = "jobSeeker", cascade = CascadeType.ALL)
-    private List<Application> applications = new ArrayList<>();
+    private List<JobApplication> jobApplications = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<SavedJob> savedJobs = new ArrayList<>();
