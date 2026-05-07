@@ -47,7 +47,7 @@ public class SecurityConfig {
 
                         // Public job browsing
                         .requestMatchers(HttpMethod.GET, "/api/job-postings").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/job-postings/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/job-postings/*").permitAll()
 
                         // Admin
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
